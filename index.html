@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design Handoff Helper</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --surface: #ffffff;
+      --surface-soft: #fbfaf7;
+      --ink: #1f2937;
+      --muted: #667085;
+      --line: #e7e3da;
+      --primary: #5b5ce2;
+      --primary-dark: #4446c7;
+      --primary-soft: #ececff;
+      --accent: #f97316;
+      --success: #138a63;
+      --shadow: 0 24px 70px rgba(31, 41, 55, 0.12);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(91, 92, 226, 0.20), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(249, 115, 22, 0.14), transparent 32rem),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 44px;
+      border: 1px solid rgba(255, 255, 255, 0.76);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(246, 244, 239, 0.84));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -130px auto;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(91, 92, 226, 0.16), rgba(249, 115, 22, 0.20));
+      filter: blur(2px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      margin: 0 0 18px;
+      padding: 8px 12px;
+      color: var(--primary-dark);
+      border: 1px solid rgba(91, 92, 226, 0.18);
+      border-radius: 999px;
+      background: var(--primary-soft);
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(2.45rem, 7vw, 5.6rem);
+      line-height: 0.95;
+      letter-spacing: -0.08em;
+    }
+
+    .hero p {
+      position: relative;
+      z-index: 1;
+      max-width: 650px;
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.2rem);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 24px;
+      margin-top: 26px;
+    }
+
+    .panel {
+      border: 1px solid rgba(231, 227, 218, 0.92);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 18px 50px rgba(31, 41, 55, 0.08);
+      backdrop-filter: blur(18px);
+    }
+
+    .input-panel,
+    .output-panel {
+      padding: 24px;
+    }
+
+    .panel-header {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hint {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .sample {
+      margin: 0 0 16px;
+      padding: 14px;
+      color: #4b5563;
+      border: 1px dashed #d6d0c4;
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+      font-size: 0.92rem;
+    }
+
+    .sample strong {
+      color: var(--ink);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 330px;
+      resize: vertical;
+      padding: 18px;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      outline: none;
+      background: #fff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      font: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    textarea:focus {
+      border-color: rgba(91, 92, 226, 0.62);
+      box-shadow: 0 0 0 4px rgba(91, 92, 226, 0.12);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      box-shadow: 0 14px 26px rgba(91, 92, 226, 0.28);
+    }
+
+    .secondary {
+      color: var(--ink);
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .copy {
+      color: var(--primary-dark);
+      background: var(--primary-soft);
+    }
+
+    .status {
+      min-height: 22px;
+      margin: 14px 0 0;
+      color: var(--success);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .empty-state {
+      display: grid;
+      min-height: 478px;
+      place-items: center;
+      padding: 34px;
+      color: var(--muted);
+      border: 1px dashed #d6d0c4;
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+      text-align: center;
+    }
+
+    .empty-state span {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--ink);
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .output-content {
+      display: grid;
+      gap: 14px;
+    }
+
+    .output-section {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+    }
+
+    .output-section h3 {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 0 0 9px;
+      font-size: 0.98rem;
+      letter-spacing: -0.01em;
+    }
+
+    .section-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.13);
+    }
+
+    .output-section ul {
+      margin: 0;
+      padding-left: 20px;
+      color: #485160;
+    }
+
+    .output-section li + li {
+      margin-top: 6px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 820px) {
+      .page {
+        width: min(100% - 22px, 680px);
+        padding: 20px 0;
+      }
+
+      .hero {
+        padding: 28px;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      textarea {
+        min-height: 260px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .hero,
+      .input-panel,
+      .output-panel {
+        padding: 20px;
+      }
+
+      .panel-header {
+        display: block;
+      }
+
+      .actions,
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="eyebrow">Prototype tool for design teams</div>
+      <h1>Design Handoff Helper</h1>
+      <p>
+        Turn messy product design notes into structured developer handoff documentation with clear expectations,
+        accessibility reminders, edge cases, and open questions.
+      </p>
+    </header>
+
+    <section class="workspace" aria-label="Design handoff generator">
+      <article class="panel input-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Rough Design Notes</h2>
+            <p class="hint">Paste bullets, Slack notes, meeting notes, or early feature thinking.</p>
+          </div>
+        </div>
+
+        <p class="sample">
+          <strong>Example:</strong> Recipe page with an embedded AI Cooking Assistant. Include suggested prompts,
+          follow-up questions, loading states, and responsive behavior for mobile and desktop.
+        </p>
+
+        <label class="hidden" for="roughNotes">Rough design notes</label>
+        <textarea id="roughNotes" placeholder="Paste rough design notes here..."></textarea>
+
+        <div class="actions">
+          <button class="primary" id="generateBtn" type="button">Generate Handoff Notes</button>
+          <button class="secondary" id="clearBtn" type="button">Clear</button>
+        </div>
+      </article>
+
+      <article class="panel output-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Generated Handoff</h2>
+            <p class="hint">A structured draft your team can refine before sending to engineering.</p>
+          </div>
+          <button class="copy hidden" id="copyBtn" type="button">Copy Notes</button>
+        </div>
+
+        <div class="empty-state" id="emptyState">
+          <div>
+            <span>Ready when you are</span>
+            Add notes on the left, then generate a clean handoff draft.
+          </div>
+        </div>
+
+        <div class="output-content hidden" id="outputContent" aria-live="polite"></div>
+        <p class="status" id="statusMessage" role="status"></p>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const roughNotes = document.querySelector("#roughNotes");
+    const generateBtn = document.querySelector("#generateBtn");
+    const clearBtn = document.querySelector("#clearBtn");
+    const copyBtn = document.querySelector("#copyBtn");
+    const emptyState = document.querySelector("#emptyState");
+    const outputContent = document.querySelector("#outputContent");
+    const statusMessage = document.querySelector("#statusMessage");
+
+    const sectionLabels = [
+      "Summary",
+      "Developer Notes",
+      "Acceptance Criteria",
+      "Accessibility Considerations",
+      "Edge Cases",
+      "Open Questions"
+    ];
+
+    let latestSections = null;
+
+    function cleanText(value) {
+      return value.trim().replace(/^[-*]\s*/, "").replace(/\s+/g, " ");
+    }
+
+    function detectKeywords(input) {
+      const text = input.toLowerCase();
+      return {
+        recipe: /recipe|ingredient|cook|cooking|meal|prep|nutrition|serving/.test(text),
+        aiCooking: /ai cooking assistant|cooking assistant|ai assistant|assistant|chatbot|chat bot/.test(text),
+        embedded: /embedded|embed|iframe|host page|in-page|inline experience/.test(text),
+        suggestedPrompts: /suggested prompt|prompt chip|starter prompt|quick prompt|example prompt/.test(text),
+        followUp: /follow-up|follow up|followup|ask another|question|conversation|thread/.test(text),
+        responsive: /responsive|mobile|desktop|tablet|breakpoint|phone|small screen/.test(text),
+        form: /form|input|field|submit|validation/.test(text),
+        modal: /modal|dialog|drawer|overlay/.test(text),
+        checkout: /checkout|payment|order|cart/.test(text),
+        data: /api|data|state|loading|empty|error|fallback/.test(text)
+      };
+    }
+
+    function getFeatureName(input, keywords) {
+      const firstUsefulLine = input
+        .split(/\n|[.!?]/)
+        .map(cleanText)
+        .find((line) => line.length > 0) || "this experience";
+
+      if (/ai cooking assistant/i.test(input)) return "AI Cooking Assistant";
+      if (keywords.recipe && keywords.aiCooking) return "AI Cooking Assistant on the recipe page";
+      if (keywords.recipe) return "recipe page experience";
+      if (keywords.embedded) return "embedded product experience";
+
+      return firstUsefulLine.slice(0, 90);
+    }
+
+    function getInputDetails(input, keywords) {
+      const details = [];
+
+      if (keywords.recipe) details.push("recipe page");
+      if (keywords.aiCooking) details.push("AI Cooking Assistant");
+      if (keywords.embedded) details.push("embedded experience");
+      if (keywords.suggestedPrompts) details.push("suggested prompts");
+      if (keywords.followUp) details.push("follow-up questions");
+      if (keywords.responsive) details.push("responsive behavior");
+
+      const quotedPhrases = input.match(/"([^"]{3,60})"|“([^”]{3,60})”/g) || [];
+      quotedPhrases.slice(0, 2).forEach((phrase) => {
+        details.push(phrase.replace(/[“”"]/g, ""));
+      });
+
+      return [...new Set(details)];
+    }
+
+    function joinDetails(details) {
+      if (details.length === 0) return "the key design requirements";
+      if (details.length === 1) return details[0];
+      return `${details.slice(0, -1).join(", ")} and ${details[details.length - 1]}`;
+    }
+
+    function generateSections(input) {
+      const keywords = detectKeywords(input);
+      const feature = getFeatureName(input, keywords);
+      const details = getInputDetails(input, keywords);
+      const detailSummary = joinDetails(details);
+
+      const summary = [
+        `Implement ${feature} with special attention to ${detailSummary}.`,
+        "The handoff should turn the rough notes into a buildable flow with clear content hierarchy, interaction states, and product behavior."
+      ];
+
+      const developerNotes = [
+        `Use the user's notes as the source of truth for ${feature}, especially the parts mentioning ${detailSummary}.`,
+        "Break the build into clear areas: content structure, primary interactions, system feedback, and responsive layout.",
+        "Confirm final copy, design tokens, spacing, and component reuse before engineering starts."
+      ];
+
+      const acceptanceCriteria = [
+        `${feature} communicates its purpose clearly when the user first lands on the experience.`,
+        "Primary actions are easy to find, use the correct visual priority, and provide feedback after interaction.",
+        "The implementation matches the intended content hierarchy, interaction states, and responsive behavior."
+      ];
+
+      const accessibility = [
+        "Use semantic HTML landmarks, headings, lists, and buttons so the experience is understandable with assistive technology.",
+        "Provide visible focus styles, keyboard access, and descriptive labels for every interactive control.",
+        "Check text, icon, and disabled-state contrast against the final background colors."
+      ];
+
+      const edgeCases = [
+        "Handle long copy, missing optional content, empty states, loading states, and recoverable errors.",
+        "Verify the experience with unusually short and unusually detailed user-provided content.",
+        "Confirm the layout does not break when content wraps or when media assets are unavailable."
+      ];
+
+      const openQuestions = [
+        "Which final content strings, localization rules, or legal disclaimers are required before build?",
+        "Which analytics events should be tracked for impressions, clicks, submissions, errors, and completion?",
+        "Are there existing design-system components engineering should reuse for this feature?"
+      ];
+
+      if (keywords.recipe) {
+        summary.push("For recipe contexts, preserve the user's ability to understand ingredients, steps, timing, servings, and next actions without losing their place.");
+        developerNotes.push("Recipe content should support structured sections for title, hero/media, ingredients, preparation steps, cook time, servings, and related actions.");
+        acceptanceCriteria.push("Recipe details remain scannable, with ingredients and instructions visually separated and easy to reference while cooking.");
+        accessibility.push("Mark recipe steps and ingredient groups as ordered or unordered lists so screen-reader users can navigate them predictably.");
+        edgeCases.push("Account for missing recipe images, very long ingredient names, optional substitutions, and recipes with many steps.");
+        openQuestions.push("Which recipe metadata is required: prep time, cook time, total time, servings, difficulty, nutrition, author, or source attribution?");
+      }
+
+      if (keywords.aiCooking) {
+        summary.push("The AI Cooking Assistant should feel helpful and contextual, not like a generic chatbot dropped onto the page.");
+        developerNotes.push("The assistant should maintain context from the current recipe or page and make clear when responses are generated.");
+        developerNotes.push("Include states for initial prompt, thinking/loading, response, follow-up, failure, and retry.");
+        acceptanceCriteria.push("Assistant responses reference the current cooking context when available and do not obscure the main recipe content.");
+        accessibility.push("Announce new assistant responses with an appropriate live region without interrupting the user's current task.");
+        edgeCases.push("Handle AI timeout, unavailable service, unsafe or off-topic requests, and responses that are longer than the available container.");
+        openQuestions.push("What safety guidance, nutrition disclaimer, or AI-generated-content disclosure should appear near assistant responses?");
+      }
+
+      if (keywords.embedded) {
+        developerNotes.push("Define the embedded container's minimum height, maximum width, host-page spacing, and theming rules.");
+        developerNotes.push("Clarify whether the embed receives user, recipe, or page context from the host application.");
+        acceptanceCriteria.push("The embedded experience loads cleanly inside the host page without layout shift or style leakage.");
+        accessibility.push("Focus order should move into and out of the embedded experience predictably.");
+        edgeCases.push("Test constrained embed sizes, blocked third-party storage, slow host-page data, and unavailable context from the parent page.");
+        openQuestions.push("Will the embedded experience be implemented as native page UI, an iframe, a web component, or another integration pattern?");
+      }
+
+      if (keywords.suggestedPrompts) {
+        developerNotes.push("Suggested prompts should be modeled as selectable chips or buttons with clear default, hover, focus, selected, and disabled states.");
+        acceptanceCriteria.push("Selecting a suggested prompt populates or submits the intended question exactly once and shows clear progress feedback.");
+        accessibility.push("Prompt chips should be keyboard reachable and announced as buttons with descriptive labels.");
+        edgeCases.push("Handle no suggested prompts, too many prompts, repeated prompts, and prompts with long text.");
+        openQuestions.push("Are suggested prompts curated by design/content, generated dynamically, or returned by an API?");
+      }
+
+      if (keywords.followUp) {
+        developerNotes.push("Follow-up questions should preserve conversation context and make it clear which response they relate to.");
+        acceptanceCriteria.push("Users can ask a follow-up question after an initial response without losing the prior exchange.");
+        accessibility.push("Conversation updates should preserve reading order and avoid unexpected focus jumps.");
+        edgeCases.push("Handle rapid repeated follow-up submissions, empty questions, and navigating away with an unfinished response.");
+        openQuestions.push("Should follow-up history persist across page refreshes, sessions, or navigation?");
+      }
+
+      if (keywords.responsive) {
+        developerNotes.push("Document desktop, tablet, and mobile layout behavior, including when columns stack and which content remains sticky or visible.");
+        acceptanceCriteria.push("The responsive layout works at small, medium, and large breakpoints without horizontal scrolling.");
+        accessibility.push("Maintain logical source order when the responsive layout visually rearranges content.");
+        edgeCases.push("Test the design with large text settings, landscape mobile, and narrow embedded containers.");
+      }
+
+      if (keywords.form) {
+        developerNotes.push("Define validation rules, helper text, error text, and submit behavior before build.");
+        accessibility.push("Associate every form field with a label, helper text, and error message when applicable.");
+      }
+
+      if (keywords.modal) {
+        developerNotes.push("For modal behavior, include open and close triggers, escape-key support, overlay behavior, and focus management.");
+        accessibility.push("Trap focus inside the dialog and return focus to the triggering control when closed.");
+      }
+
+      if (keywords.checkout) {
+        acceptanceCriteria.push("Order, payment, or confirmation details are accurate and easy to review.");
+        edgeCases.push("Account for payment failure, duplicate submission, delayed confirmation, and unavailable order data.");
+      }
+
+      if (keywords.data) {
+        edgeCases.push("Document expected API states, including loading skeletons, empty results, permission errors, and retryable failures.");
+        openQuestions.push("What data fields are required, optional, generated, cached, or dependent on backend availability?");
+      }
+
+      return {
+        "Summary": summary,
+        "Developer Notes": developerNotes,
+        "Acceptance Criteria": acceptanceCriteria,
+        "Accessibility Considerations": accessibility,
+        "Edge Cases": edgeCases,
+        "Open Questions": openQuestions
+      };
+    }
+
+    function escapeHTML(value) {
+      return value.replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[character]));
+    }
+
+    function renderSections(sections) {
+      outputContent.innerHTML = sectionLabels.map((label) => {
+        const items = sections[label].map((item) => `<li>${escapeHTML(item)}</li>`).join("");
+        return `
+          <section class="output-section">
+            <h3><span class="section-dot"></span>${label}</h3>
+            <ul>${items}</ul>
+          </section>
+        `;
+      }).join("");
+
+      emptyState.classList.add("hidden");
+      outputContent.classList.remove("hidden");
+      copyBtn.classList.remove("hidden");
+    }
+
+    function formatNotesForCopy(sections) {
+      return sectionLabels.map((label) => {
+        const items = sections[label].map((item) => `- ${item}`).join("\n");
+        return `${label}\n${items}`;
+      }).join("\n\n");
+    }
+
+    generateBtn.addEventListener("click", () => {
+      const input = roughNotes.value.trim();
+      statusMessage.textContent = "";
+
+      if (!input) {
+        roughNotes.focus();
+        statusMessage.textContent = "Add rough notes first, then generate a handoff draft.";
+        return;
+      }
+
+      latestSections = generateSections(input);
+      renderSections(latestSections);
+      statusMessage.textContent = "Handoff notes generated.";
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!latestSections) return;
+
+      try {
+        await navigator.clipboard.writeText(formatNotesForCopy(latestSections));
+        statusMessage.textContent = "Copied handoff notes to clipboard.";
+      } catch (error) {
+        statusMessage.textContent = "Copy failed. Select the generated notes and copy them manually.";
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      roughNotes.value = "";
+      latestSections = null;
+      outputContent.innerHTML = "";
+      outputContent.classList.add("hidden");
+      copyBtn.classList.add("hidden");
+      emptyState.classList.remove("hidden");
+      statusMessage.textContent = "";
+      roughNotes.focus();
+    });
+  </script>
+</body>
+</html>
